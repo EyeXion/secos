@@ -11,10 +11,10 @@ PHDRS
    phsetup PT_LOAD FLAGS (7);
 }
 
-SECTIONS
+SECTIONS /* On va définir l'organisation des sections dans le fichier ELF final et quels fichiers sont dans les sections */
 {
-   . = 0x300000;
-   .mbh      : { KEEP(*(.mbh)) . = ALIGN(4);     } : phboot
+   . = 0x300000; /*Le point est associé à l'adresse 0x300000 et c'est le début des sections */
+   .mbh      : { KEEP(*(.mbh)) . = ALIGN(4);     } : phboot /*multi boot header */
    .stack    : { KEEP(*(.stack))                 } : phstack
 
    __kernel_start__ = .;
