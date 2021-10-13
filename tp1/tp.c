@@ -111,6 +111,7 @@ void tp()
   init_seg_desc(0xfffff,0,SEG_DESC_DATA_RW,1,0,1,1); //Segment data
   //Init registres de segements
   set_ss(gdt_krn_seg_sel(2));
+  printf("%d\n", gdt_krn_seg_sel(2));
   set_ds(gdt_krn_seg_sel(2));
   set_es(gdt_krn_seg_sel(2));
   set_fs(gdt_krn_seg_sel(2));
