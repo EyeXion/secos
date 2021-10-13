@@ -9,7 +9,7 @@
 extern info_t *info;
 extern uint32_t __kernel_end__;
 
-seg_desc_t * gdt;
+seg_desc_t gdt[NB_MAX_SEG_DESC];
 
 void show_gdt(){
     printf("\n\t####### NEW SHOW GDT######\n\n");
@@ -77,10 +77,10 @@ void init_seg_desc(uint64_t limit, uint64_t base, uint64_t type, uint64_t s, uin
 
 void init_gdt(){
     // on doit calculer l'adresse de la GDT par rapport à la fin de l'espace du kernel, puis l'aligner sur 8 octets
-    uint32_t gdt_addr = (uint32_t) &__kernel_end__;
+    /* uint32_t gdt_addr = (uint32_t) &__kernel_end__;
     gdt_addr = gdt_addr%(8*8) + gdt_addr;
     debug("Addr GDT : 0x%x\n", gdt_addr);
-    gdt = (seg_desc_t *) gdt_addr;
+    gdt = (seg_desc_t *) gdt_addr; */
 
     gdt_reg_t gdtr;
     gdtr.limit = 0;
