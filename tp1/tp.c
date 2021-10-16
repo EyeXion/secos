@@ -124,8 +124,8 @@ void tp()
   show_gdt();
 
   char  src[64];
-  char *dst = 0;
+  char *dst = 0; 
   memset(src, 0xff, 64);
-  set_es(gdt_krn_seg_sel(3));
+//set_es(gdt_krn_seg_sel(4));
   _memcpy8(dst, src, 32);
 }
