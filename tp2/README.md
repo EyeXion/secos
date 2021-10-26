@@ -31,6 +31,8 @@ Chaque trampoline, saute dans `idt_common` qui appelle le gestionnaire d'interru
 
 **Activez les interruptions dans une boucle infinie. Que constatez-vous ?**
 
+Rien de spécial, on fait une division par 0 en boucle, rien ne se passe, l'interruption se fait une fois et on arrive sur une fatal error (le programme ne reprend donc pas, ce qui était attendu compte tenu de notre implem).
+
 ---
 
 ### Question 3
@@ -61,6 +63,11 @@ Chaque trampoline, saute dans `idt_common` qui appelle le gestionnaire d'interru
 
 **Modifiez le descripteur d'interruption `(int_desc_t)` de #BP afin d'appeler `bp_handler()` la place du trampoline déjà installé. Faites un appel explicite à `bp_trigger()` dans `tp()`. Que constatez-vous ?**
 
+On va set l'isr de BP dans l'IDT à la fonction bp_handler. Pour ce faire, j'ai regardé dans idt.s la position dans l'IDT de BP (index 3). Donc il suffit de set le desc de l'index 3 à notre fonction.
+
+Quand on trigger manuellement, on a notre message de debug de bp_handler (donc bon signe) puis toujours la fatal exception. Néamoins le code de l'interruption est devenu int6 au lieu de int3 qui est celui de invalid opcode avec un eip = 0x08:0x8b
+
+
 ---
 
 ### Question 3.5
@@ -70,11 +77,22 @@ Chaque trampoline, saute dans `idt_common` qui appelle le gestionnaire d'interru
  - **Que doit faire exactement la fonction `bp_handler()` lorsqu'elle se termine ?**
  - **N'oubliez pas qu'elle n'est pas une simple fonction mais un gestionnaire d'interruption.**
 
+
+Voir https://pages.cs.wisc.edu/~remzi/Classes/354/Fall2012/Handouts/Handout-CallReturn.pdf pour explications
+
+
+- Au moment de l'arrivée de l'interruption, on est dans `bp_trigger()`,  donc la stack frame est celle de bp_trigger().
+-Par contre comme le hanlder est une fonction, alors on va avoir une autre stack frame pour la fonction `bp_hanlder()`. la fonction `bp_handler()` doit donc à la main changer de con texte (mov %EBP, %ESP / pop %EBP) afin de switch à la stackframe de `bp_trigger()` qui ne s'était pas terminée.
+- Puis on fait un jmp vers cette addr de retour (pop EIP, ou un RET ?).
+- Comme c'est un gestionnaire d'interruption, il faut utiliser iret au lieu de ret afin de pouvoir remettre le contexte bien dans les registres de controle (même si iret fait rien y'a pas de pile noyau).
+
 ---
 
 ### Question 3.6
 
 **Affichez l'EIP sauvegardé dans la pile au moment où #BP est générée. A quelle adresse cela correspond-il ?**
+
+Quand on affiche eip, on obtient : 0x30408c. On avait l'addr de l'isr de BP à 0x30404a. Donc eip pointe vers l'insruction qui suit le début du handler.
 
 ---
 

@@ -52,11 +52,16 @@ void userland()
 
 **Que se passe-t-il lors du chargement de DS/ES/FS/GS ?**
 
+Cela se passe bien, pas d'exceptions. Comme on sait que le niveau de priv dans ces registres est pas utile on a rien de spécial. 
+
+
 ---
 
 ### Question 3.2
 
 **Que se passe-t-il lors du chargement de SS ?**
+
+On a une general exception (et avec CS aussi). En effet, on ne peux pas juste changer de niveau de privilège comme ça (dans le sens 0 -> 3) car nous sommes soit encore dans le SS R0 si on change CS ou dans le CS R0 si on change SS --> on doit changer les 2 en même temps ?
 
 ---
 
@@ -65,6 +70,8 @@ void userland()
 **Essayez d'effectuer un "far jump" vers la fonction `userland()`. Pour cela il faut charger dans `CS` le sélecteur de code ring 3 et dans EIP l'adresse de la fonction `userland()`. Vous pouvez utiliser le type `fptr32_t` et la fonction `farjump()` de notre noyau.**
 
 **Quelles conclusions en tirez-vous ? Comment un noyau fait-il pour démarrer une tâche en ring 3 ?**
+
+
 
 ---
 
