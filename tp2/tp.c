@@ -18,6 +18,10 @@ void infinite_loop_idt(){
 
 void bp_handler(){
   debug("############ Break point triggered ###############\n");
+
+  //I dont know why we should put this, presented during the solutuion
+  // I guess we have to put it beceause the handler is not called with call but just a jump so we have to push context like in ARM by hand 
+  //asm volatile("pusha");
   
   //print eip before BP, eip is located 32 bits before the context
   uint32_t eip_bp;
@@ -32,6 +36,9 @@ void bp_handler(){
   //Then we switch to the return addr that is below the context (after the previous instruction, the ret addr of bp_handler in now at esp)
   //Since its a interruption hanlder, we use iret instead of ret (even if for now we do everything in ring0 so its useless)
   asm volatile("iret" :::);
+
+  //We could do this as well
+  // asm volatile ("popa; leave; iret");
 }
 
 

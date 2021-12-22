@@ -29,7 +29,7 @@ par
 
 **Servez-vous des outils présents dans notre OS (`get_gdtr(), seg_desc_t et gdt_reg_t`)**
 
-Tout d'abord, nous allons chercher l'adresse du gdtr grace à `get_gdtr()` puis nous accedons à la struc du type `struct global_descriptor_table_register (aka gdt_reg_t)
+Tout d'abord, nous allons chercher l'adresse du gdtr grace à `get_gdtr()` puis nous accedons à la struc du type `struct global_descriptor_table_register (aka gdt_reg_t)`
 
 https://www.felixcloutier.com/x86/sgdt
 
@@ -95,3 +95,9 @@ No idea, besoin de demander explications.
 
 Obs : quand on set es sur le nouveau segement AVANT le memeset, on se retrouve aec une fatal error (Exception: General protection).
 Si on ne le set pas ou si on le set après, aucune erreur.
+
+
+Si on met à 64 entrée le memcpy, on a tjrs une excpetion
+
+Astuce : quand on a une exepection, on peut faire un objdump et voir quelle instrution à planté.
+on peut aussi aller voir la doc INTEl pour voir pk on a une excpetion à cette instruction

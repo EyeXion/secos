@@ -6,6 +6,15 @@
 
 
 #define NB_MAX_SEG_DESC 6
+#define GDT_IDX_CODE_R0 1 
+#define GDT_IDX_DATA_R0 2
+#define GDT_IDX_CODE_R3 3
+#define GDT_IDX_DATA_R3 4
+#define GDT_IDX_TSS 5
+
+
+
+
 extern info_t *info;
 seg_desc_t gdt[NB_MAX_SEG_DESC];
 tss_t tss;
@@ -38,7 +47,7 @@ void show_gdt(){
     }
 }
 
-void init_seg_desc(uint64_t limit, uint64_t base, uint64_t type, uint64_t s, uint64_t dpl, uint64_t p, uint64_t d, uint64_t g){
+void init_seg_desc(uint64_t limit, uint64_t base, uint64_t type, uint64_t dpl){
     int i;
     gdt_reg_t gdtr;
     get_gdtr(gdtr);
@@ -48,7 +57,7 @@ void init_seg_desc(uint64_t limit, uint64_t base, uint64_t type, uint64_t s, uin
     else{
         i = (gdtr.limit + 1)/sizeof(seg_desc_t);
     }
-    gdt[i].raw = 0;
+    gdt[i].raw = 0ULL;
     printf("Index init seg : %d\n", i);
     gdt[i].base_1 = base;
     gdt[i].base_2 = base >> 16;
@@ -56,20 +65,57 @@ void init_seg_desc(uint64_t limit, uint64_t base, uint64_t type, uint64_t s, uin
     gdt[i].limit_1 = limit;
     gdt[i].limit_2 = limit >> 16;
     gdt[i].type = type;
-    gdt[i].s = s;
     gdt[i].dpl = dpl;
-    gdt[i].p = p;
+
+    gdt[i].s = 1; 
+    gdt[i].p = 1;
     gdt[i].avl = 0;
     gdt[i].l = 0;
-    gdt[i].d = d;
-    gdt[i].g = g;
+    gdt[i].d = 1;
+    gdt[i].g = 1;
 
     if (i == 0){
         gdtr.limit = sizeof(seg_desc_t) - 1;
+        gdt[0].raw = 0ULL;
     }
     else{
         gdtr.limit = gdtr.limit + sizeof(seg_desc_t);
     }
+    set_gdtr(gdtr);
+}
+
+void init_seg_desc_tss(){
+    int i;
+    gdt_reg_t gdtr;
+    get_gdtr(gdtr);
+    if (gdtr.limit == 0){
+        i = 0;
+    }
+    else{
+        i = (gdtr.limit + 1)/sizeof(seg_desc_t);
+    }
+
+    gdt[i].raw = 0ULL;
+    printf("Index init seg TSS : %d\n", i);
+
+    offset_t base = (offset_t)&tss;
+    int limit = sizeof(tss_t);
+    gdt[i].base_1 = base;
+    gdt[i].base_2 = base >> 16;
+    gdt[i].base_3 = base >> 24;
+    gdt[i].limit_1 = limit;
+    gdt[i].limit_2 = limit >> 16;
+    gdt[i].type = SEG_DESC_SYS_TSS_AVL_32;
+    gdt[i].dpl = 0;
+
+    gdt[i].s = 0; 
+    gdt[i].p = 1;
+    gdt[i].avl = 0;
+    gdt[i].l = 0;
+    gdt[i].d = 0;
+    gdt[i].g = 0;
+
+    gdtr.limit = gdtr.limit + sizeof(seg_desc_t);
     set_gdtr(gdtr);
 }
 
@@ -89,15 +135,19 @@ void init_gdt(){
 
 void userland()
 {
-   asm volatile ("mov $0xaa, %eax");
+    printf("hello\n");
+   asm volatile ("mov $0xbb, %eax");
+   while(1){}
 }
 
 void load_seg_regs(){
   //Question 3.1 - 3.2
-  set_ds(gdt_usr_seg_sel(4));
-  set_es(gdt_usr_seg_sel(4));
-  set_fs(gdt_usr_seg_sel(4));
-  set_gs(gdt_usr_seg_sel(4));
+  set_cs(gdt_krn_seg_sel(GDT_IDX_CODE_R0));
+  set_ds(gdt_krn_seg_sel(GDT_IDX_DATA_R0));
+  set_es(gdt_krn_seg_sel(GDT_IDX_DATA_R0));
+  set_fs(gdt_krn_seg_sel(GDT_IDX_DATA_R0));
+  set_gs(gdt_krn_seg_sel(GDT_IDX_DATA_R0));
+  set_ss(gdt_krn_seg_sel(GDT_IDX_DATA_R0));
   //Question 3.2 - This crashes because we cant change it like that because we cannot set ss to a ring0 segment while cs (out current priv level) is still in ring3
   //set_ss(gdt_usr_seg_sel(4));
 }
@@ -110,37 +160,42 @@ void jmp_to_userland(){
    // crash here because SS not set at the same time
    //set_cs(gdt_usr_seg_sel(3)); 
    //farjump(ptr_user_fonc);
-   int ss_r3 = gdt_usr_seg_sel(4);
-   int cs_r3 = gdt_usr_seg_sel(3);
-   asm volatile("mov %esp, %eax"); //We put esp in eax
+   /* asm volatile("mov %esp, %eax"); //We put esp in eax
    asm volatile("push %0" :: "b"(ss_r3) :); // We push r3 ss
    asm volatile("push %eax"); //We push esp
    asm volatile("pushf"); // On push les eflags
    asm volatile("push %0" :: "b"(cs_r3) :); //On push cs r3
    asm volatile("push %0" :: "b"((offset_t)userland) :); //On push eip pour aller au userland 
-   asm volatile("iret");
+   asm volatile("iret"); */
+
+    asm volatile (
+      "push %0    \n" // ss
+      "push %%ebp \n" // esp
+      "pushf      \n" // eflags
+      "push %1    \n" // cs
+      "push %2    \n" // eip
+      "iret"
+      ::
+       "i"(gdt_usr_seg_sel(GDT_IDX_DATA_R3)),
+       "i"(gdt_usr_seg_sel(GDT_IDX_CODE_R3)),
+       "r"(&userland)
+    );
 }
 
-
-void init_tss(){
-    tss.s0.esp = get_ebp();
-    tss.s0.ss = gdt_krn_seg_sel(2);
-    set_tr(gdt_krn_seg_sel(5));
-}
 
 void tp()
 {
     init_gdt();
-    init_seg_desc(0xfff0,0,0,0,0,0,0,0); //1er segment null Index0
-    init_seg_desc(0xfffff,0,SEG_DESC_CODE_XR,1,0,1,1,1); //Segment code Ring 0 Index1
-    init_seg_desc(0xfffff,0,SEG_DESC_DATA_RW,1,0,1,1,1); //Segment data Ring 0 Index2
-    init_seg_desc(0xfffff,0,SEG_DESC_CODE_XR,1,3,1,1,1); //Segment Code Ring 3 Index3
-    init_seg_desc(0xfffff,0,SEG_DESC_DATA_RW,1,3,1,1,1); //Segment data Ring 3 index4
-    init_seg_desc(sizeof(tss_t),(offset_t)&tss,SEG_DESC_SYS_TSS_AVL_32,1,3,1,1,0); // Segment TSS Ring 0 Index 5
+    init_seg_desc(0,0,0,0); //1er segment null Index0
+    init_seg_desc(0xfffff,0,SEG_DESC_CODE_XR,0); //Segment code Ring 0 Index1
+    init_seg_desc(0xfffff,0,SEG_DESC_DATA_RW,0); //Segment data Ring 0 Index2
+    init_seg_desc(0xfffff,0,SEG_DESC_CODE_XR,3); //Segment Code Ring 3 Index3
+    init_seg_desc(0xfffff,0,SEG_DESC_DATA_RW,3); //Segment data Ring 3 index4
+    init_seg_desc_tss();
     show_gdt();
     load_seg_regs();
-    tss.s0.esp = get_esp();
-    tss.s0.ss = gdt_krn_seg_sel(2);
-    //set_tr(gdt_usr_seg_sel(5));
+    tss.s0.esp = get_ebp();
+    tss.s0.ss = gdt_krn_seg_sel(GDT_IDX_DATA_R0);
+    set_tr(gdt_krn_seg_sel(GDT_IDX_TSS));
     jmp_to_userland();
 }

@@ -147,10 +147,12 @@ Il faut donc trouver les index de ces adresses dans la PTB1, puis en changer le 
 
 Même méthode qu'avant, faut prendre les adresses virt, leur faire avoir le bon décalage afin de trouver l'offset (l'index) dans la PTB2 qui leur correspond, puis changer le contenu des pte correspondantes (rien de fou quand on a fait le reste au final)
 
+Mecanisme utile pour la mémoire partagée.
+
 ---
 
 ### Question 9
 
 **Effacez la première entrée du PGD. Que constatez-vous ? Expliquez pourquoi ?**
 
-ça ne plante pas ! C'est du au fait que le flag PCD (page cache disable) est à 0 donc les tables de pages restent en cache donc elles existent encore même si on les supprime --> ça plante pas.
+ça ne plante pas ! C'est du au fait que le flag PCD (page cache disable) est à 0 donc les tables de pages restent en cache donc elles existent encore même si on les supprime --> ça plante pas (le cache c'est le TLB).

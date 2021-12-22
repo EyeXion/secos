@@ -39,6 +39,9 @@ Rien de spécial, on fait une division par 0 en boucle, rien ne se passe, l'inte
 
 **Gestion furtive des breakpoints #BP (Breakpoint Exception). Le but est de ne pas modifier `intr_hdlr` mais d'intercepter les #BP en amont depuis "tp.c".**
 
+
+ON aurait pu voir BP est l'inteeruption 3 dans le code ou bien dans la doc Intel (table des vecteurs d'interruption)
+
 ---
 
 ### Question 3.1
@@ -101,3 +104,8 @@ Quand on affiche eip, on obtient : 0x30408c. On avait l'addr de l'isr de BP à 0
 **Affichez un message de debug dans la fonction `bp_trigger()` après le déclenchement du breakpoint. Que constatez-vous ? Essayez de corriger le problème afin que le message s'affiche correctement.**
 
 **Quelles conclusions tirez-vous du développement en C d'un gestionnaire d'interruption ? Pourquoi l'assembleur semble-t-il plus approprié ?**
+
+Le message s'affiche bien donc je sais pas. Par contre assembleur plus approprié car bcp d'assembleur inline dans le code donc autant le faire en asm direct (notamment pour le iret)
+Aussi, on a pas à se soucier des ret normaux des fonctions C, on peut direct coder avec des iret et tout le bazar
+
+

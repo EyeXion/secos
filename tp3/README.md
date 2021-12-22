@@ -62,6 +62,7 @@ Cela se passe bien, pas d'exceptions. Comme on sait que le niveau de priv dans c
 **Que se passe-t-il lors du chargement de SS ?**
 
 On a une general exception (et avec CS aussi). En effet, on ne peux pas juste changer de niveau de privilège comme ça (dans le sens 0 -> 3) car nous sommes soit encore dans le SS R0 si on change CS ou dans le CS R0 si on change SS --> on doit changer les 2 en même temps ?
+Intel autorise juste pas de changer SS comme ça, faut obligatoirement utiliser un far_jump avec TSS
 
 ---
 
